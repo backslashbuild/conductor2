@@ -2,7 +2,7 @@
 const fs = require("fs");
 const util = require("util");
 const path = require("path");
-const colors = require("colors");
+const chalk = require("chalk");
 const program = require("commander");
 const YAML = require("yamljs");
 
@@ -12,7 +12,7 @@ const checkSchema = require("./check-schema");
 const readFile = util.promisify(fs.readFile);
 
 const handleError = (error) => {
-  console.log(colors.red(error));
+  console.log(chalk.red(error));
   process.exit(1);
 };
 
