@@ -21,7 +21,7 @@ module.exports = function (config) {
         if (condition.exit) {
           processes[condition.exit].on("exit", () => {
             lines[task].push(
-              chalk.yellow("detedcted exit: ") + condition.exit + chalk.yellow(" starting...")
+              chalk.yellow("detected exit: ") + condition.exit + chalk.yellow(" starting...")
             );
             processes[task].start();
           });
