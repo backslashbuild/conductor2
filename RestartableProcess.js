@@ -31,7 +31,7 @@ class RestartableProcess extends EventEmitter {
         this.p.stdout.off("data", stdout);
         this.p.stderr.off("data", stderr);
         this.p.off("exit", exit);
-        await new Promise((res) => kill(p.pid, () => res())); // always resolves.
+        await new Promise((res) => kill(this.p.pid, () => res())); // always resolves.
         delete this.p;
       }
     };
