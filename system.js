@@ -1,6 +1,12 @@
 const RestartableProcess = require("./RestartableProcess");
 const chalk = require("chalk");
 const ObservableArray = require("./ObservableArray");
+const FileWatcher = require("./FileWatcher");
+
+const fileWatchers = {};
+const getFileWatcher = (glob) => {
+  return (fileWatchers[glob] = fileWatchers[glob] || new FileWatcher(glob));
+};
 
 module.exports = function (config) {
   const processes = {};
@@ -8,7 +14,10 @@ module.exports = function (config) {
 
   for (let task of Object.keys(config.tasks)) {
     const { cwd } = config.tasks[task];
-    const p = (processes[task] = new RestartableProcess(config.tasks[task].script, { cwd }));
+    const p = (processes[task] = new RestartableProcess(
+      config.tasks[task].script,
+      { cwd }
+    ));
     const out = (lines[task] = new ObservableArray());
     p.on("data", (data) => out.push(data));
     p.on("exit", () => out.push(chalk.red("exit")));
@@ -21,7 +30,18 @@ module.exports = function (config) {
         if (condition.exit) {
           processes[condition.exit].on("exit", () => {
             lines[task].push(
-              chalk.yellow("detected exit: ") + condition.exit + chalk.yellow(" starting...")
+              chalk.yellow("detected exit: ") +
+                condition.exit +
+                chalk.yellow(" starting...")
+            );
+            processes[task].start();
+          });
+        } else if (condition.changes) {
+          getFileWatcher(condition.changes).on("change", () => {
+            lines[task].push(
+              chalk.yellow("detected file change: ") +
+                condition.changes +
+                chalk.yellow(" starting...")
             );
             processes[task].start();
           });
@@ -37,7 +57,18 @@ module.exports = function (config) {
         if (condition.exit) {
           processes[condition.exit].on("exit", () => {
             lines[task].push(
-              chalk.yellow("detected exit: ") + condition.exit + chalk.yellow("restarting...")
+              chalk.yellow("detected exit: ") +
+                condition.exit +
+                chalk.yellow("restarting...")
+            );
+            processes[task].restart();
+          });
+        } else if (condition.changes) {
+          getFileWatcher(condition.changes).on("change", () => {
+            lines[task].push(
+              chalk.yellow("detected file change: ") +
+                condition.changes +
+                chalk.yellow(" restarting...")
             );
             processes[task].restart();
           });
