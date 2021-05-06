@@ -5,7 +5,6 @@ const screen = blessed.screen({
   smartCSR: true,
   autoPadding: true,
   dockBorders: true,
-  dump: "./dump.txt",
 });
 
 const taskList = blessed.box({
@@ -13,7 +12,7 @@ const taskList = blessed.box({
   left: "start",
   width: "160",
   height: "100%",
-  label: "tasks",
+  label: "Tasks",
   border: {
     type: "line",
   },
@@ -24,7 +23,7 @@ const currentLog = blessed.box({
   left: "160",
   // width: "100% - 100",
   height: "100%",
-  label: "item 1",
+  label: "Logs",
   scrollable: true,
   alwaysScroll: true,
   focused: true,
@@ -33,7 +32,7 @@ const currentLog = blessed.box({
   border: {
     type: "line",
   },
-  content: "Hello {bold}world{/bold}!",
+  content: "",
   scrollbar: {
     ch: " ",
     track: {

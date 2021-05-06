@@ -1,5 +1,6 @@
-const RestartableProcess = require("./proc");
+const RestartableProcess = require("./RestartableProcess");
 const chalk = require("chalk");
+const ObservableArray = require("./ObservableArray");
 
 module.exports = function (config) {
   const processes = {};
@@ -8,7 +9,7 @@ module.exports = function (config) {
   for (let task of Object.keys(config.tasks)) {
     const { cwd } = config.tasks[task];
     const p = (processes[task] = new RestartableProcess(config.tasks[task].script, { cwd }));
-    const out = (lines[task] = []);
+    const out = (lines[task] = new ObservableArray());
     p.on("data", (data) => out.push(data));
     p.on("exit", () => out.push(chalk.red("exit")));
   }
@@ -36,7 +37,7 @@ module.exports = function (config) {
         if (condition.exit) {
           processes[condition.exit].on("exit", () => {
             lines[task].push(
-              chalk.yellow("detedcted exit: ") + condition.exit + chalk.yellow("restarting...")
+              chalk.yellow("detected exit: ") + condition.exit + chalk.yellow("restarting...")
             );
             processes[task].restart();
           });
@@ -71,7 +72,7 @@ module.exports = function (config) {
       display.appendLog(x);
     });
 
-    processes[taskList[current]].on("data", write);
+    lines[taskList[current]].on("data", write);
 
     display.setTasks(taskList, current);
 
@@ -79,12 +80,12 @@ module.exports = function (config) {
   }
 
   display.keys.left(function () {
-    processes[taskList[current]].off("data", write);
+    lines[taskList[current]].off("data", write);
     current = Math.max(0, current - 1);
     update();
   });
   display.keys.right(function () {
-    processes[taskList[current]].off("data", write);
+    lines[taskList[current]].off("data", write);
     current = Math.min(taskList.length - 1, current + 1);
     update();
   });
