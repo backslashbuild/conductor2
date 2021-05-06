@@ -11,7 +11,7 @@ class ObservableArray extends EventEmitter {
     this.emit("data", value);
   };
 
-  forEach = this.array.forEach;
+  forEach = (fn) => this.array.forEach(fn);
 }
 
 module.exports = ObservableArray;
