@@ -6,7 +6,8 @@ module.exports = function (config) {
   const lines = {};
 
   for (let task of Object.keys(config.tasks)) {
-    const p = (processes[task] = new RestartableProcess(config.tasks[task].script));
+    const { cwd } = config.tasks[task];
+    const p = (processes[task] = new RestartableProcess(config.tasks[task].script, { cwd }));
     const out = (lines[task] = []);
     p.on("data", (data) => out.push(data));
     p.on("exit", () => out.push(chalk.red("exit")));

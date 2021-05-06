@@ -35,6 +35,7 @@ const schema = {
           type: "object",
           properties: {
             script: { type: "string", errorMessage: "'tasks.script' must be a string" },
+            cwd: { type: "string", errorMessage: "'tasks.cwd' must be a string" },
             auto_start: { type: "boolean", errorMessage: "'tasks.auto_start' must be a boolean" },
             start_on: eventsListSchema,
             restart_on: eventsListSchema,

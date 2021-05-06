@@ -4,7 +4,7 @@ const { parseArgsStringToArgv } = require("string-argv");
 const kill = require("tree-kill");
 
 class RestartableProcess extends EventEmitter {
-  constructor(command) {
+  constructor(command, options) {
     super();
 
     const stdout = (data) => {
@@ -39,7 +39,7 @@ class RestartableProcess extends EventEmitter {
     this.exec = () => {
       const args = parseArgsStringToArgv(command);
       const cmd = args.shift();
-      this.p = spawn(cmd, args, {});
+      this.p = spawn(cmd, args, { ...options });
       this.p.stdout.on("data", stdout);
       this.p.stderr.on("data", stderr);
       this.p.on("exit", exit);
