@@ -20,6 +20,12 @@ New features:
   - [ ] Indicate tailing mode by changing the border colour
   - [ ] Displaying list of key bindings
 
+Possible future extended features
+
+- [ ] Interpretation and mapping of JSON logs
+  - [ ] Extraction of Message
+  - [ ] Ability to select a log to see details of JSON properties
+
 Usage:
 
 ```bash
@@ -28,4 +34,21 @@ $ npm install -g https://github.com/backslashbuild/conductor2
 $ conductor2
 # or specify a different filename:
 $ conductor2 ./example.yml
+```
+
+Example configuration:
+
+```
+tasks:
+  services/hi:
+    script: node ./test_server.js
+    cwd: ./src
+    auto_start: false
+    start_on:
+      - exit: services/init
+    restart_on:
+      - changes: ./src/test_server.js
+
+  services/init:
+    script: echo 'init.'
 ```
