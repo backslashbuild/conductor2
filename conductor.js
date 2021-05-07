@@ -22,8 +22,6 @@ program
   .arguments("[config file]", "The config file, defaults to ./conductor.yml")
   .action(async (configFile = "./conductor.yml") => {
     try {
-      const port = program.port;
-      const browser = program.browser;
       const configString = await readFile(configFile, {
         encoding: "utf8",
       }).catch(handleError);

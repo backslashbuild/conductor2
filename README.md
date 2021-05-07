@@ -9,8 +9,16 @@ New features:
 - [ ] Event system - trigger the start and restart of scripts based on changes to the filesystem and exits of other scripts
   - [x] exit events
   - [ ] specific exit codes
-  - [ ] file changes using watchers
+  - [x] file changes using watchers
 - [x] New UI - now entirely in the terminal using https://github.com/chjj/blessed
+- [ ] Controllable via keys in the terminal
+  - [x] Left and Right arrows to change selected task
+  - [x] Up and Down arrows to scroll the logs view
+  - [ ] K to kill selected task
+  - [ ] R to restart or start selected process
+  - [ ] T to toggle tailing or scrolling mode
+  - [ ] Indicate tailing mode by changing the border colour
+  - [ ] Displaying list of key bindings
 
 Usage:
 
