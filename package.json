@@ -15,11 +15,21 @@
     "chokidar": "^3.5.1",
     "commander": "^7.2.0",
     "cross-spawn": "^7.0.3",
+    "husky": "^6.0.0",
+    "lint-staged": "^10.5.4",
     "string-argv": "^0.3.1",
     "tree-kill": "^1.2.2",
     "yamljs": "^0.3.0"
   },
   "prettier": {
     "printWidth": 80
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{js,ts,tsx}": "prettier --write"
   }
 }
