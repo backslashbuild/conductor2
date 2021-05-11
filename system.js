@@ -1,88 +1,81 @@
-const RestartableProcess = require("./RestartableProcess");
+const { EventEmitter } = require("events");
 const chalk = require("chalk");
-const ObservableArray = require("./ObservableArray");
+const RestartableProcess = require("./RestartableProcess");
 const FileWatcher = require("./FileWatcher");
 
-const fileWatchers = {};
-const getFileWatcher = (glob) => {
-  return (fileWatchers[glob] = fileWatchers[glob] || new FileWatcher(glob));
-};
-
 module.exports = function (config) {
-  const processes = {};
-  const lines = {};
+  const mainChannel = new EventEmitter();
+  const logs = [];
 
-  for (let task of Object.keys(config.tasks)) {
-    const { cwd } = config.tasks[task];
-    const p = (processes[task] = new RestartableProcess(
-      config.tasks[task].script,
-      { cwd }
-    ));
-    const out = (lines[task] = new ObservableArray());
-    p.on("data", (data) => out.push(data));
-    p.on("exit", () => out.push(chalk.red("exit")));
-  }
+  const fileWatchers = {};
+  const getFileWatcher = (glob) => {
+    return (fileWatchers[glob] = fileWatchers[glob] || new FileWatcher(glob));
+  };
 
-  // wire up starts
-  for (let task of Object.keys(config.tasks)) {
-    if (Array.isArray(config.tasks[task].start_on)) {
-      for (let condition of config.tasks[task].start_on) {
-        if (condition.exit) {
-          processes[condition.exit].on("exit", () => {
-            lines[task].push(
-              chalk.yellow("detected exit: ") +
-                condition.exit +
-                chalk.yellow(" starting...")
-            );
-            processes[task].start();
-          });
-        } else if (condition.changes) {
-          getFileWatcher(condition.changes).on("change", () => {
-            lines[task].push(
-              chalk.yellow("detected file change: ") +
-                condition.changes +
-                chalk.yellow(" starting...")
-            );
-            processes[task].start();
-          });
-        }
-      }
+  const onEvent = (
+    { changes, exit, "exit.ok": exitOk, "exit.err": exitErr },
+    callback
+  ) => {
+    if (changes) {
+      getFileWatcher(changes).on("change", () => {
+        callback("detected file change: " + changes);
+      });
+    } else if (exit) {
+      mainChannel.on(`${exit}.exit`, () => {
+        callback("detected exit: " + exit);
+      });
+    } else if (exitOk) {
+      mainChannel.on(`${exit}.exit.ok`, () => {
+        callback("detected exit.ok: " + exit);
+      });
+    } else if (exitErr) {
+      mainChannel.on(`${exit}.exit.err`, () => {
+        callback("detected exit.err: " + exit);
+      });
     }
-  }
+  };
 
-  // wire up restarts
-  for (let task of Object.keys(config.tasks)) {
-    if (Array.isArray(config.tasks[task].restart_on)) {
-      for (let condition of config.tasks[task].restart_on) {
-        if (condition.exit) {
-          processes[condition.exit].on("exit", () => {
-            lines[task].push(
-              chalk.yellow("detected exit: ") +
-                condition.exit +
-                chalk.yellow("restarting...")
-            );
-            processes[task].restart();
-          });
-        } else if (condition.changes) {
-          getFileWatcher(condition.changes).on("change", () => {
-            lines[task].push(
-              chalk.yellow("detected file change: ") +
-                condition.changes +
-                chalk.yellow(" restarting...")
-            );
-            processes[task].restart();
-          });
-        }
-      }
-    }
-  }
+  Object.keys(config.tasks).forEach((task) => {
+    const { script, cwd, auto_start, restart_on, start_on } = config.tasks[
+      task
+    ];
+    const process = new RestartableProcess(script, { cwd });
+    const log = (logs[task] = []);
 
-  // trigger the autos
-  for (let task of Object.keys(config.tasks)) {
-    if (config.tasks[task].auto_start !== false) {
-      processes[task].start();
+    const writeLine = (data) => {
+      log.push(data);
+      mainChannel.emit(`${task}.data`);
+    };
+
+    process.on("data", writeLine);
+    process.on("exit", (code) => {
+      writeLine(chalk.red("exit"));
+      mainChannel.emit(`${task}.exit`);
+      mainChannel.emit(`${task}.exit.${code == 0 ? "ok" : "err"}`);
+    });
+
+    if (start_on) {
+      start_on.forEach((x) => {
+        onEvent(x, (message) => {
+          writeLine(chalk.yellow(message));
+          writeLine(chalk.yellow("starting..."));
+          process.start();
+        });
+      });
     }
-  }
+    if (restart_on) {
+      start_on.forEach((x) => {
+        onEvent(x, (message) => {
+          writeLine(chalk.yellow(message));
+          writeLine(chalk.yellow("restarting..."));
+          process.restart();
+        });
+      });
+    }
+    if (auto_start !== false) {
+      process.start();
+    }
+  });
 
   const display = require("./display");
 
@@ -99,24 +92,23 @@ module.exports = function (config) {
   function update() {
     display.clear();
 
-    lines[taskList[current]].forEach((x) => {
+    logs[taskList[current]].forEach((x) => {
       display.appendLog(x);
     });
 
-    lines[taskList[current]].on("data", write);
+    mainChannel.on(`${taskList[current]}.data`, write);
 
     display.setTasks(taskList, current);
-
     display.render();
   }
 
   display.keys.left(function () {
-    lines[taskList[current]].off("data", write);
+    mainChannel.off(`${taskList[current]}.data`, write);
     current = Math.max(0, current - 1);
     update();
   });
   display.keys.right(function () {
-    lines[taskList[current]].off("data", write);
+    mainChannel.off(`${taskList[current]}.data`, write);
     current = Math.min(taskList.length - 1, current + 1);
     update();
   });
